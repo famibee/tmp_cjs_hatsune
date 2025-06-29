@@ -1,0 +1,161 @@
+	[return cond=const.sn.frm.album]
+
+	[add_frame id=album src=_album visible=false]
+	[event key='dom=album:#close' label=*exit global=true]
+
+	[add_lay layer=album class=grp]
+
+[let_ml name=dicUI]
+	{
+		"ja": {
+			"screen name": "アルバム",
+			"now playing": "now playing"
+		},
+		"es": {
+			"screen name": "Galería",
+			"now playing": "Jugando ahora"
+		},
+		"en": {
+			"screen name": "album",
+			"now playing": "now playing"
+		},
+		"cn": {
+			"screen name": "阅览相簿",
+			"now playing": "现在播放"
+		},
+		"ct": {
+			"screen name": "閱覽相簿",
+			"now playing": "現在播放"
+		}
+	}
+[endlet_ml]
+	[set_frame id=album var_name=val_ui text=&dicUI]
+
+[macro name=アルバム解放 nowarn_unused=true
+	sum='アルバム解放\n指定したアルバム要素を解放する'
+	detail='_album.sn の [let_ml name=dic] 内の定義で、【!!sys:album.yun_1184】という記述に対応するサムネイルボタンを表示し、ボタンとして押せるようにする'
+
+	%name='String||解放するアルバム要素の名前'
+]
+	[let name="&'sys:album.'+ mp:name" text=true]
+[endmacro]
+
+[return]
+
+; 最新値で更新
+*val2ctrl
+	; アルバム表示内容（ここをカスタマイズ。json形式で記述）
+	; 「{},{}, ...」の最後にコンマ「,」があるとエラーになるので注意
+	; 「enabled: 'true'」指定すると最初から閲覧できる
+[let_ml name=dic]
+	[
+		{"type": "pic", "fn": "hatsunekan_entrance", "title": "初音館_玄関", "enabled": "#{!!sys:album.hatsunekan_entrance}"},
+		{"type": "pic", "fn": "hatsunekan_corridor", "title": "初音館_廊下", "enabled": "#{!!sys:album.hatsunekan_corridor}"},
+		{"type": "pic", "fn": "univ_auditorium", "title": "大学講堂", "enabled": "#{!!sys:album.univ_auditorium}"},
+		{"type": "pic", "fn": "hatsunekan_minoura_room", "title": "初音館_蓑浦部屋", "enabled": "#{!!sys:album.hatsunekan_minoura_room}"},
+		{"type": "pic", "fn": "gas_lamp", "title": "ガス灯", "enabled": "#{!!sys:album.gas_lamp}"},
+		{"type": "mov", "fn": "nc10889", "title": "桜", "enabled": "true"},
+		{"type": "bgm", "fn": "free10", "title": "free10(BGM)", "enabled": "true"},
+		{"type": "bgm", "fn": "free04", "title": "free04(BGM)", "enabled": "#{!!sys:album.free04}"},
+		{"type": "bgm", "fn": "free25", "title": "free25(BGM)", "enabled": "#{!!sys:album.free25}"},
+		{"type": "bgm", "fn": "free57", "title": "free57(BGM)", "enabled": "#{!!sys:album.free57}"}
+	]
+[endlet_ml]
+	[set_frame id=album var_name=val_dic text=&dic]
+	[set_frame id=album var_name=val_ui_lang text=&lang]
+	[let_frame id=album var_name=init function=true]
+
+	[call label=*upd_bgmdsp]
+[return]
+
+*upd_bgmdsp
+	[set_frame id=album var_name=val_fnBgm text=&save:const.sn.sound.BGM.fn|'(No BGM)']
+	[let_frame id=album var_name=val2ctrl function=true]
+[return]
+
+
+;*********************************************************
+*title_album
+	[enable_event enabled=false]
+	[clear_event]
+
+	; 最新値で更新
+	[call label=*val2ctrl]
+	[frame id=album visible=true]
+
+	[set_focus add='dom=album:.hover-overlay' need_err=false]
+	[event key='dom=album:.pic' label=*pic call=true need_err=false]
+	[event key='dom=album:.bgm' label=*bgm call=true need_err=false]
+	[event key='dom=album:.mov' label=*mov call=true need_err=false]
+	[event key=rightclick label=*exit]
+	[event key=meta label=*exit]
+	[event key=control label=*exit]
+	[event key=delete label=*exit]
+	[event key=backspace label=*exit]
+	[event key=shift label=*exit]
+	[event key=end label=*exit]
+	[event key=escape label=*exit]
+	[event key=sn:chgNavLang label=*chgNavLang call=true]
+	[set_focus to=null]
+[s]
+
+
+*chgNavLang
+	[call fn=ext_lang]
+
+	[set_frame id=album var_name=val_ui_lang text=&lang]
+	[let_frame id=album var_name=ui_redraw function=true]
+[return]
+
+*pic	; 画像ビュアー
+	[lay layer=album fn=&sn.event.domdata.arg visible=true float=true left=0 top=0]
+	[frame id=album visible=false]
+	[event key=rightclick label=**after]
+	[event key=meta label=**after]
+	[event key=control label=**after]
+	[event key=delete label=**after]
+	[event key=backspace label=**after]
+	[event key=shift label=**after]
+	[event key=end label=**after]
+	[event key=escape label=**after]
+	[waitclick]		; 右クリックイベントを一時無効化したい
+**
+	[frame id=album visible=true]
+	[lay layer=album visible=false]
+[return]
+
+*bgm	; BGM切り替え
+	[frame id=album disabled=true]
+	[playbgm fn=&sn.event.domdata.arg]
+	[call label=*upd_bgmdsp]
+	[frame id=album disabled=false]
+[return]
+
+*mov	; 動画再生
+	[frame id=album disabled=true]
+		&vol = sys:const.sn.sound.BGM.volume
+		&fn = save:const.sn.sound.BGM.fn
+		[fadeoutbgm time=400]
+
+	[lay layer=album fn=black face=&sn.event.domdata.arg visible=true float=true left=0 top=0]
+	[frame id=album visible=false]
+	[wv fn=&sn.event.domdata.arg]
+
+		[stopfadese buf=BGM]
+		[volume buf=BGM volume=&vol]
+		[playbgm fn=&fn cond='fn!=""']
+	[frame id=album visible=true]
+	[frame id=album disabled=false]
+	[lay layer=album fn=black visible=false]
+[return]
+
+
+;*********************************************************
+*exit
+	[se fn=&sysse_cancel buf=SYS]
+
+	[frame id=album visible=false]
+
+	[enable_event enabled=true]
+	[set_focus to=null]
+[return]
