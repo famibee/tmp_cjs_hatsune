@@ -1,5 +1,5 @@
 {
-	"save_ns": "hatsune",
+	"save_ns": "tmp_cjs_hatsune",
 	"window": {
 		"width": 1024,
 		"height": 768
@@ -34,5 +34,5 @@
 		"variable": false
 	},
 	"code": {},
-	"debuger_token": "05ce111a-0202-4385-b7e6-907fb75112e6"
+	"debuger_token": ""
 }
